@@ -7,11 +7,15 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class Main {
     private static final String API_TOKEN = System.getenv("DISCOGS_TOKEN");
     private static final String SEARCH_URL = "https://api.discogs.com/artists/22217/releases";
     private static String url;
     private static String year;
+    private static ArrayList<ReleaseData> releaseData = new ArrayList<>();
     public static void main(String[]args) throws Exception{
 
         for(int j = 1; j <= 28; j++){
@@ -40,8 +44,14 @@ public class Main {
                 }else{
                     year = "Unknown";
                 }
-                System.out.println("Title: " + title  + " Year: " + year );
+                ReleaseData r = new ReleaseData(title,year);
+                releaseData.add(r);
             }
+        }
+        releaseData.sort((r1,r2)->r1.getYear().compareTo(
+                r2.getYear()));
+        for(ReleaseData obj : releaseData){
+            System.out.println("Title: " + obj.getTitle()  + " Year: " + obj.getYear() );
         }
 
 
