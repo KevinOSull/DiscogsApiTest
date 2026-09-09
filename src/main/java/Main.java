@@ -2,6 +2,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -16,8 +20,10 @@ public class Main {
     private static String url;
     private static String year;
     private static ArrayList<ReleaseData> releaseData = new ArrayList<>();
+    private static final String FOLDER_PATH = "src/main/resources";
+    private static final String FILE_PATH = "src/main/resources/releaseData.csv";
     public static void main(String[]args) throws Exception{
-
+        checkIfFileExists();
         for(int j = 1; j <= 28; j++){
             url = SEARCH_URL + "?page=" + j;
 
@@ -52,14 +58,45 @@ public class Main {
         }
         releaseData.sort((r1,r2)->r1.getYear().compareTo(
                 r2.getYear()));
+        writeDataToFile();
         for(ReleaseData obj : releaseData){
             System.out.println("Artist: " + obj.getArtist() +  " Title: " + obj.getTitle()  + " Year: " + obj.getYear() );
         }
 
+    }
 
+    private static void checkIfFileExists() throws IOException {
+        File file = new File(FILE_PATH);
+        File folder = new File(FOLDER_PATH);
+        if(!folder.exists()){
+            folder.mkdir();
+        }
 
+        if(!file.exists()){
+            FileWriter createNewFile = new FileWriter(file);
+            createNewFile.write("Artist,Title,Year\n");
+            createNewFile.close();
+        }
+    }
 
-
-
+    private static void writeDataToFile()throws IOException{
+        File file = new File(FILE_PATH);
+        FileWriter fw = new FileWriter(file,true);
+        BufferedWriter bw = new BufferedWriter(fw);
+        for(int i = 0; i < releaseData.size(); i++){
+            bw.write("\"");
+            bw.write(releaseData.get(i).getArtist());
+            bw.write("\"");
+            bw.write(",");
+            bw.write("\"");
+            bw.write(releaseData.get(i).getTitle());
+            bw.write("\"");
+            bw.write(",");
+            bw.write("\"");
+            bw.write(releaseData.get(i).getYear());
+            bw.write("\"");
+            bw.newLine();
+        }
+        bw.close();
     }
 }
