@@ -30,6 +30,7 @@ public class Main {
 
             HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
+            //System.out.println(response.body());
 
 
             JsonObject json =
@@ -38,20 +39,21 @@ public class Main {
 
             for(int i = 0; i < releases.size(); i++){
                 JsonObject rel = releases.get(i).getAsJsonObject();
+                String artist = rel.get("artist").getAsString();
                 String title = rel.get("title").getAsString();
                 if(rel.has("year")){
                   year = rel.get("year").getAsString();
                 }else{
                     year = "Unknown";
                 }
-                ReleaseData r = new ReleaseData(title,year);
+                ReleaseData r = new ReleaseData(artist,title,year);
                 releaseData.add(r);
             }
         }
         releaseData.sort((r1,r2)->r1.getYear().compareTo(
                 r2.getYear()));
         for(ReleaseData obj : releaseData){
-            System.out.println("Title: " + obj.getTitle()  + " Year: " + obj.getYear() );
+            System.out.println("Artist: " + obj.getArtist() +  " Title: " + obj.getTitle()  + " Year: " + obj.getYear() );
         }
 
 
