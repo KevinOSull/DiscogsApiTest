@@ -13,6 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 public class Main {
     private static final String API_TOKEN = System.getenv("DISCOGS_TOKEN");
@@ -24,45 +25,67 @@ public class Main {
     private static final String FILE_PATH = "src/main/resources/releaseData.csv";
     public static void main(String[]args) throws Exception{
         checkIfFileExists();
-        for(int j = 1; j <= 28; j++){
-            url = SEARCH_URL + "?page=" + j;
+        fetchAndProcessReleases();
+    }
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Authorization", "Discogs token=" + API_TOKEN)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
-            //System.out.println(response.body());
-
-
-            JsonObject json =
-                    JsonParser.parseString(response.body()).getAsJsonObject();
-            JsonArray releases = json.getAsJsonArray("releases");
-
-            for(int i = 0; i < releases.size(); i++){
-                JsonObject rel = releases.get(i).getAsJsonObject();
-                String artist = rel.get("artist").getAsString();
-                String title = rel.get("title").getAsString();
-                if(rel.has("year")){
-                  year = rel.get("year").getAsString();
-                }else{
-                    year = "Unknown";
-                }
-                ReleaseData r = new ReleaseData(artist,title,year);
-                releaseData.add(r);
-            }
+    private static void fetchAndProcessReleases() throws IOException, InterruptedException {
+        for(int i = 1; i <= 28; i++){
+            buildPageUrl(i);
+            HttpResponse res = sendRequest();
+            JsonArray json = getReleasesFromResponse(res);
+            addReleasesToList(json);
         }
-        releaseData.sort((r1,r2)->r1.getYear().compareTo(
-                r2.getYear()));
+        sortReleasesByYear();
         writeDataToFile();
+        printReleases();
+    }
+
+    private static String buildPageUrl(int pageNumber){
+        return url = SEARCH_URL + "?page=" + pageNumber;
+    }
+
+    private static HttpResponse<String> sendRequest() throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Discogs token=" + API_TOKEN)
+                .GET()
+                .build();
+        HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        return response;
+    }
+
+    private static JsonArray getReleasesFromResponse(HttpResponse<String>response){
+        JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+        JsonArray releases = json.getAsJsonArray("releases");
+        return releases;
+    }
+
+    private static void sortReleasesByYear(){
+        releaseData.sort(Comparator.comparing(ReleaseData::getYear));
+    }
+
+    private static void printReleases(){
         for(ReleaseData obj : releaseData){
             System.out.println("Artist: " + obj.getArtist() +  " Title: " + obj.getTitle()  + " Year: " + obj.getYear() );
         }
+    }
 
+    private static void addReleasesToList(JsonArray releases){
+        for(int i = 0; i < releases.size(); i++){
+            JsonObject rel = releases.get(i).getAsJsonObject();
+            String artist = rel.get("artist").getAsString();
+            String title = rel.get("title").getAsString();
+            if(rel.has("year")){
+                year = rel.get("year").getAsString();
+            }else{
+                year = "Unknown";
+            }
+            ReleaseData r = new ReleaseData(artist,title,year);
+            releaseData.add(r);
+        }
     }
 
     private static void checkIfFileExists() throws IOException {
